@@ -85,6 +85,43 @@ table.dataTable tbody tr:hover {
 /* Fix dropdown bullets */
 .dropdown-menu, .dropdown-menu li { list-style: none !important; list-style-type: none !important; padding-left: 0 !important; margin-left: 0 !important; }
 </style>
+<style>
+:root {
+    <?php 
+    $primary = $_SESSION['primary_color'] ?? '#6750A4';
+    // Basic luminance check to decide if on-primary should be black or white
+    $r = hexdec(substr($primary, 1, 2));
+    $g = hexdec(substr($primary, 3, 2));
+    $b = hexdec(substr($primary, 5, 2));
+    $yiq = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
+    $onPrimary = ($yiq >= 128) ? '#1d1b20' : '#ffffff';
+    ?>
+    --primary: <?= $primary ?>;
+    --on-primary: <?= $onPrimary ?>;
+    --primary-container: <?= $primary ?>20; /* 12% opacity version for containers */
+    --on-primary-container: <?= $primary ?>;
+}
+
+.btn-primary-g {
+    background: var(--primary) !important;
+    color: var(--on-primary) !important;
+    border: none !important;
+    transition: all 0.3s ease;
+}
+.btn-primary-g:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 4px 12px <?= $primary ?>40;
+}
+.text-primary { color: var(--primary) !important; }
+.bg-primary { background-color: var(--primary) !important; }
+.sidebar-nav .nav-link.active {
+    background: var(--primary-container) !important;
+    color: var(--primary) !important;
+}
+.sidebar-nav .nav-link.active i {
+    color: var(--primary) !important;
+}
+</style>
 <?php if(isset($extraCss)) echo $extraCss; ?>
 </head>
 <body>
@@ -92,7 +129,14 @@ table.dataTable tbody tr:hover {
 <!-- Sidebar -->
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
-        <div class="brand-icon"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+        <?php $logo = mess_logo(); ?>
+        <?php if ($logo): ?>
+            <div class="brand-icon overflow-hidden bg-white" style="border-radius: var(--radius-sm);">
+                <img src="<?= $logo ?>" class="w-100 h-100 object-fit-contain">
+            </div>
+        <?php else: ?>
+            <div class="brand-icon"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+        <?php endif; ?>
         <div>
             <div class="brand-name"><?= e(mess_name()) ?></div>
             <div class="brand-sub"><?= e(ucfirst(str_replace('_',' ',auth_user()['role']))) ?></div>
@@ -105,7 +149,13 @@ table.dataTable tbody tr:hover {
 
     <div class="sidebar-footer">
         <div class="user-card">
-            <div class="user-avatar"><?= strtoupper(substr(auth_user()['full_name'],0,1)) ?></div>
+            <div class="user-avatar overflow-hidden">
+                <?php if (isset($_SESSION['avatar']) && $_SESSION['avatar']): ?>
+                    <img src="<?= url($_SESSION['avatar']) ?>" class="w-100 h-100 object-fit-cover">
+                <?php else: ?>
+                    <?= strtoupper(substr(auth_user()['full_name'],0,1)) ?>
+                <?php endif; ?>
+            </div>
             <div class="user-info">
                 <div class="user-name"><?= e(auth_user()['full_name']) ?></div>
                 <div class="user-email"><?= e(auth_user()['email']) ?></div>
@@ -128,8 +178,12 @@ table.dataTable tbody tr:hover {
             <span class="badge-dot" id="notifDot" style="display:none"></span>
         </button>
         <div class="dropdown">
-            <button class="user-avatar dropdown-toggle border-0" data-bs-toggle="dropdown" style="width:40px;height:40px">
-                <?= strtoupper(substr(auth_user()['full_name'],0,1)) ?>
+            <button class="user-avatar dropdown-toggle border-0 overflow-hidden" data-bs-toggle="dropdown" style="width:40px;height:40px">
+                <?php if (isset($_SESSION['avatar']) && $_SESSION['avatar']): ?>
+                    <img src="<?= url($_SESSION['avatar']) ?>" class="w-100 h-100 object-fit-cover">
+                <?php else: ?>
+                    <?= strtoupper(substr(auth_user()['full_name'],0,1)) ?>
+                <?php endif; ?>
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow-4">
                 <li><a class="dropdown-item text-secondary text-label" href="#"><?= e(auth_user()['full_name']) ?></a></li>

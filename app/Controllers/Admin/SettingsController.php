@@ -14,7 +14,7 @@ class SettingsController extends Controller
         $settings = [];
         foreach ($rows as $r) $settings[$r['setting_key']] = $r['setting_value'];
 
-        $tenant = DB::queryOne("SELECT owner_name, primary_color FROM tenants WHERE tenant_id=?", [$tid]);
+        $tenant = DB::queryOne("SELECT owner_name, primary_color, logo FROM tenants WHERE tenant_id=?", [$tid]);
         
         $slots = DB::query("SELECT * FROM meal_slots WHERE tenant_id=? ORDER BY sort_order",[$tid]);
         $pageTitle = 'Mess Settings';
@@ -44,10 +44,34 @@ class SettingsController extends Controller
         $tenantUpdates = [];
         if ($this->input('primary_color')) $tenantUpdates['primary_color'] = $this->input('primary_color');
         if ($this->input('owner_name'))    $tenantUpdates['owner_name']    = $this->input('owner_name');
+        if ($this->input('mess_name'))     $tenantUpdates['name']          = $this->input('mess_name');
+
+        // Handle Logo Upload
+        if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+            $f = $_FILES['logo'];
+            $ext  = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
+            $allowed = ['jpg', 'jpeg', 'png', 'webp', 'svg'];
+            
+            if (in_array($ext, $allowed)) {
+                $newName = 'logo_' . $tid . '_' . time() . '.' . $ext;
+                $uploadDir = ROOT_PATH . '/public/uploads/logos/';
+                if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+                
+                if (move_uploaded_file($f['tmp_name'], $uploadDir . $newName)) {
+                    $tenantUpdates['logo'] = 'uploads/logos/' . $newName;
+                    $_SESSION['tenant_logo'] = $tenantUpdates['logo'];
+                }
+            }
+        }
 
         if (!empty($tenantUpdates)) {
             $tenantUpdates['updated_at'] = date('Y-m-d H:i:s');
             DB::update('tenants', $tenantUpdates, ['tenant_id' => $tid]);
+            
+            // Sync session if color changed
+            if (isset($tenantUpdates['primary_color'])) {
+                $_SESSION['primary_color'] = $tenantUpdates['primary_color'];
+            }
         }
 
         log_activity('settings.saved','mess_settings',0);

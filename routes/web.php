@@ -89,7 +89,7 @@ $router->group(['prefix' => '/admin', 'middleware' => ['Auth', 'Tenant']], funct
 
     // Complaints
     $r->get('/complaints',                     'Admin\ComplaintController@index');
-    $r->post('/complaints/{id}/update-status', 'Admin\ComplaintController@updateStatus');
+    $r->post('/complaints/{id}/status',        'Admin\ComplaintController@updateStatus');
 
     // Notifications
     $r->get('/notifications',                  'Admin\NotificationController@index');
@@ -123,6 +123,8 @@ $router->group(['prefix' => '/student', 'middleware' => ['Auth', 'Tenant']], fun
     $r->post('/complaints/submit',       'Student\PortalController@submitComplaint');
     $r->get('/notifications',            'Student\PortalController@notifications');
     $r->get('/membership',               'Student\PortalController@membership');
+    $r->post('/profile/photo',           'Student\PortalController@updatePhoto');
+    $r->post('/profile/password',        'Student\PortalController@updatePassword');
 });
 
 // ── Coordinator ──────────────────────────────────────────────

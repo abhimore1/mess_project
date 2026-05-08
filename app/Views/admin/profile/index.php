@@ -9,8 +9,12 @@
         <div class="card h-100">
             <div class="card-body text-center py-5">
                 <!-- Avatar with refined gradient and shadow -->
-                <div class="mx-auto mb-4 animate-scaleIn" style="width:120px; height:120px; border-radius: var(--radius-xl); background: linear-gradient(135deg, var(--primary), var(--tertiary)); display:flex; align-items:center; justify-content:center; color:#fff; font-size:3rem; font-weight:700; box-shadow: var(--shadow-4);">
-                    <?= strtoupper(substr($tenant['name'], 0, 1)) ?>
+                <div class="mx-auto mb-4 animate-scaleIn overflow-hidden" style="width:120px; height:120px; border-radius: var(--radius-xl); background: linear-gradient(135deg, var(--primary), var(--tertiary)); display:flex; align-items:center; justify-content:center; color:#fff; font-size:3rem; font-weight:700; box-shadow: var(--shadow-4); border: 2px solid white;">
+                    <?php if ($tenant['logo']): ?>
+                        <img src="<?= url($tenant['logo']) ?>" class="w-100 h-100 object-fit-contain bg-white">
+                    <?php else: ?>
+                        <?= strtoupper(substr($tenant['name'], 0, 1)) ?>
+                    <?php endif; ?>
                 </div>
                 
                 <h3 class="mb-1"><?= e($tenant['name']) ?></h3>

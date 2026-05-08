@@ -180,3 +180,15 @@ function mess_name(): string
 {
     return get_setting('mess_name', 'My Mess');
 }
+
+function mess_logo(): string
+{
+    $logo = $_SESSION['tenant_logo'] ?? null;
+    if ($logo) {
+        $fullPath = ROOT_PATH . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, ltrim($logo, '/'));
+        if (file_exists($fullPath)) {
+            return url($logo);
+        }
+    }
+    return ''; 
+}

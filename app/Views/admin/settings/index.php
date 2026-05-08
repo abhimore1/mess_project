@@ -7,7 +7,7 @@
     </div>
 </div>
 
-<form method="POST" action="<?= url('admin/settings/save') ?>" class="animate-fadeInUp stagger-1">
+<form method="POST" action="<?= url('admin/settings/save') ?>" enctype="multipart/form-data" class="animate-fadeInUp stagger-1">
     <?= csrf_field() ?>
     
     <div class="row g-4">
@@ -102,14 +102,41 @@
                         <h6 class="fw-700 mb-0"><i class="bi bi-palette me-2 text-primary"></i>Visual Branding</h6>
                     </div>
                     <div class="card-body p-4 text-center">
+                        <!-- Logo Upload -->
                         <div class="mb-4">
+                            <label class="form-label font-medium small text-muted text-uppercase tracking-wider d-block mb-3">Mess Logo</label>
+                            <div class="position-relative d-inline-block">
+                                <div class="logo-preview-wrapper shadow-sm mb-3 mx-auto">
+                                    <?php if ($tenant['logo']): ?>
+                                        <img src="<?= url($tenant['logo']) ?>" id="logoPreview" class="w-100 h-100 object-fit-contain">
+                                        <div id="logoPlaceholder" class="w-100 h-100 d-flex align-items-center justify-content-center bg-surface-variant text-muted d-none">
+                                            <i class="bi bi-image fs-1"></i>
+                                        </div>
+                                    <?php else: ?>
+                                        <div id="logoPlaceholder" class="w-100 h-100 d-flex align-items-center justify-content-center bg-surface-variant text-muted">
+                                            <i class="bi bi-image fs-1"></i>
+                                        </div>
+                                        <img src="" id="logoPreview" class="w-100 h-100 object-fit-contain d-none">
+                                    <?php endif; ?>
+                                </div>
+                                <label for="logoInput" class="btn btn-sm btn-primary-g position-absolute bottom-0 end-0 rounded-circle p-2 shadow" style="transform: translate(25%, 25%); cursor: pointer;">
+                                    <i class="bi bi-camera-fill"></i>
+                                </label>
+                                <input type="file" name="logo" id="logoInput" class="d-none" accept="image/*" onchange="previewImage(this)">
+                            </div>
+                            <div class="mt-2 x-small text-muted">Recommended: Square PNG or SVG (Max 2MB)</div>
+                        </div>
+
+                        <hr class="my-4 opacity-5">
+
+                        <div class="mb-2">
                             <label class="form-label font-medium small text-muted text-uppercase tracking-wider d-block mb-3">Primary Brand Color</label>
                             <div class="d-flex justify-content-center">
                                 <div class="color-picker-wrapper shadow-sm">
                                     <input type="color" name="primary_color" value="<?= e($tenant['primary_color']??'#6366f1') ?>">
                                 </div>
                             </div>
-                            <div class="mt-3 small text-muted">This color will be used for buttons, links, and highlights in your portal.</div>
+                            <div class="mt-3 small text-muted">This color will be used for buttons, links, and highlights.</div>
                         </div>
                     </div>
                 </div>
@@ -130,6 +157,21 @@
 </form>
 
 <style>
+.logo-preview-wrapper {
+    width: 120px;
+    height: 120px;
+    border-radius: 24px;
+    overflow: hidden;
+    background: var(--surface-container-low);
+    border: 2px dashed var(--outline-variant);
+    transition: all 0.3s ease;
+}
+
+.logo-preview-wrapper:hover {
+    border-color: var(--primary);
+    background: var(--primary-container);
+}
+
 .color-picker-wrapper {
     width: 80px;
     height: 80px;
@@ -167,6 +209,20 @@
 <script>
 // Show toast on form submission if needed, but since it's a normal redirect-post
 // the controller's flash() will handle it. We just add a loading state.
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('logoPreview');
+            const placeholder = document.getElementById('logoPlaceholder');
+            preview.src = e.target.result;
+            preview.classList.remove('d-none');
+            if (placeholder) placeholder.classList.add('d-none');
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
 document.querySelector('form').addEventListener('submit', function() {
     const btn = this.querySelector('button[type="submit"]');
     btn.disabled = true;

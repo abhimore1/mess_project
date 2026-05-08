@@ -177,4 +177,83 @@ class PortalController extends Controller
         $pageTitle   = 'My Membership';
         $this->view('student/membership', compact('student','memberships','pageTitle'), 'app');
     }
+
+    public function updatePassword(): void
+    {
+        $this->verifyCsrf();
+        $userId = auth_user()['user_id'];
+        
+        $errors = $this->validate([
+            'current_password' => 'required',
+            'new_password'     => 'required|min:6',
+            'confirm_password' => 'required|same:new_password'
+        ]);
+
+        if ($errors) {
+            flash('error', array_values($errors)[0]);
+            $this->back();
+        }
+
+        $user = DB::queryOne("SELECT password_hash FROM users WHERE user_id = ?", [$userId]);
+        if (!password_verify($this->input('current_password'), $user['password_hash'])) {
+            flash('error', 'Current password is incorrect.');
+            $this->back();
+        }
+
+        DB::update('users', [
+            'password_hash' => password_hash($this->input('new_password'), PASSWORD_BCRYPT, ['cost' => 12]),
+            'updated_at'    => date('Y-m-d H:i:s')
+        ], ['user_id' => $userId]);
+
+        flash('success', 'Password updated successfully.');
+        $this->redirect('student/profile');
+    }
+
+    public function updatePhoto(): void
+    {
+        $this->verifyCsrf();
+        $student = $this->getStudent();
+        $userId  = auth_user()['user_id'];
+        $tid     = auth_user()['tenant_id'];
+
+        if (empty($_FILES['photo']['name'])) {
+            flash('error', 'Please select a photo.');
+            $this->back();
+        }
+
+        $file = $_FILES['photo'];
+        $ext  = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, ['jpg', 'jpeg', 'png'])) {
+            flash('error', 'Only JPG and PNG files are allowed.');
+            $this->back();
+        }
+
+        $newName = 'student_' . $student['student_id'] . '_' . time() . '.' . $ext;
+        $targetDir = 'uploads/students/';
+        if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
+        
+        $targetFile = $targetDir . $newName;
+
+        if (move_uploaded_file($file['tmp_name'], $targetFile)) {
+            // Delete old photo if exists
+            if ($student['photo_path'] && file_exists($student['photo_path'])) {
+                @unlink($student['photo_path']);
+            }
+
+            // Update student table
+            DB::update('students', ['photo_path' => $targetFile], ['student_id' => $student['student_id']]);
+            
+            // Update user table avatar
+            DB::update('users', ['avatar' => $targetFile], ['user_id' => $userId]);
+            
+            // Update session
+            $_SESSION['avatar'] = $targetFile;
+
+            flash('success', 'Profile photo updated successfully.');
+        } else {
+            flash('error', 'Failed to upload photo.');
+        }
+
+        $this->redirect('student/profile');
+    }
 }

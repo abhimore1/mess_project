@@ -7,7 +7,7 @@ class AuthService
     {
         // Find user
         if ($tenantSlug) {
-            $tenant = \DB::queryOne("SELECT tenant_id, status FROM tenants WHERE slug = ?", [$tenantSlug]);
+            $tenant = \DB::queryOne("SELECT tenant_id, status, logo, primary_color FROM tenants WHERE slug = ?", [$tenantSlug]);
             if (!$tenant || $tenant['status'] !== 'active') {
                 return ['success' => false, 'message' => 'Mess not found or inactive.'];
             }
@@ -60,6 +60,8 @@ class AuthService
         $_SESSION['role_id']     = $user['role_id'];
         $_SESSION['role_slug']   = $user['role_slug'];
         $_SESSION['tenant_id']   = $user['tenant_id'];
+        $_SESSION['tenant_logo'] = $tenant['logo'] ?? null;
+        $_SESSION['primary_color'] = $tenant['primary_color'] ?? '#6750A4';
         $_SESSION['permissions'] = $permissions;
         $_SESSION['modules']     = $modules;
         $_SESSION['avatar']      = $user['avatar'];
