@@ -1,0 +1,12 @@
+.env
+vendor/
+storage/logs/
+storage/cache/
+storage/uploads/
+*.log
+.DS_Store
+.vscode/
+node_modules/
+alter_db.php
+alter_db_fixed.php
+show_cols.php
