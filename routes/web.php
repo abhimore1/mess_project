@@ -46,14 +46,17 @@ $router->group(['prefix' => '/admin', 'middleware' => ['Auth', 'Tenant']], funct
     $r->get('/students',                       'Admin\StudentController@index');
     $r->get('/students/create',                'Admin\StudentController@create');
     $r->post('/students/store',                'Admin\StudentController@store');
-    $r->get('/students/{id}',                  'Admin\StudentController@show');
-    $r->get('/students/{id}/edit',             'Admin\StudentController@edit');
-    $r->post('/students/{id}/update',          'Admin\StudentController@update');
-    $r->post('/students/{id}/delete',          'Admin\StudentController@delete');
     $r->get('/students/import/template',       'Admin\StudentController@downloadTemplate');
     $r->post('/students/import',               'Admin\StudentController@importExcel');
     $r->get('/students/export/pdf',            'Admin\StudentController@exportPdf');
     $r->get('/students/export/excel',          'Admin\StudentController@exportExcel');
+    $r->get('/students/suggestions',           'Admin\StudentController@searchSuggestions');
+    
+    // Dynamic student routes (must be below static routes)
+    $r->get('/students/{id}',                  'Admin\StudentController@show');
+    $r->get('/students/{id}/edit',             'Admin\StudentController@edit');
+    $r->post('/students/{id}/update',          'Admin\StudentController@update');
+    $r->post('/students/{id}/delete',          'Admin\StudentController@delete');
 
     // Memberships
     $r->get('/memberships',                    'Admin\MembershipController@index');

@@ -1,6 +1,6 @@
 <?php
 /**
- * Attendance marking view — optimized for mobile + premium desktop UI
+ * ERP-Style Attendance Marking — Optimized for 250+ students
  */
 ?>
 <style>
@@ -9,190 +9,236 @@
         background: var(--card);
         color: var(--muted);
         border-radius: 12px;
-        padding: 0.6rem 1.25rem;
+        padding: 0.5rem 1rem;
         font-weight: 500;
         transition: all 0.2s;
+        font-size: 0.85rem;
     }
     .slot-nav .nav-link.active {
         background: var(--primary);
         color: #fff;
         border-color: var(--primary);
-        box-shadow: 0 4px 12px rgba(26, 115, 232, 0.2);
+        box-shadow: 0 4px 12px rgba(26, 115, 232, 0.15);
     }
-    .metric-card {
+    
+    /* Stats Bar */
+    .stats-bar {
         background: var(--card);
         border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 1rem;
+        border-radius: 14px;
+        padding: 0.75rem 1.25rem;
         display: flex;
         align-items: center;
-        gap: 1rem;
-        transition: all 0.2s;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
     }
-    .metric-card:hover { border-color: var(--primary); transform: translateY(-2px); }
-    .metric-icon {
-        width: 42px; height: 42px; border-radius: 10px;
-        display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
-    }
-    .att-card {
+    .stat-item { display: flex; align-items: center; gap: 0.75rem; }
+    .stat-val { font-weight: 800; font-size: 1.25rem; line-height: 1; }
+    .stat-label { font-size: 0.65rem; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* Compact Table */
+    .attendance-table {
         background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 18px;
-        padding: 1.25rem;
-        text-align: center;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
+        border-radius: 14px;
         overflow: hidden;
-    }
-    .att-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
-    .att-card.present { border-color: #10b981; background: #f0fdf4; }
-    .att-card.absent  { border-color: #ef4444; background: #fef2f2; }
-    .att-card.leave   { border-color: #06b6d4; background: #ecfeff; }
-    
-    .att-btn {
-        width: 36px; height: 36px; border-radius: 10px;
         border: 1px solid var(--border);
-        background: var(--card);
-        color: var(--muted);
-        display: flex; align-items: center; justify-content: center;
-        transition: all 0.2s; cursor: pointer; font-size: 1.1rem;
     }
-    .btn-p.active { background: #10b981; color: #fff; border-color: #10b981; }
-    .btn-a.active { background: #ef4444; color: #fff; border-color: #ef4444; }
-    .btn-l.active { background: #06b6d4; color: #fff; border-color: #06b6d4; }
+    .attendance-table th {
+        background: var(--surface-container-low);
+        font-weight: 700;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-tertiary);
+        padding: 12px 16px;
+        border-bottom: 2px solid var(--border);
+    }
+    .attendance-table td {
+        padding: 8px 16px;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--surface-container-highest);
+    }
+    .attendance-table tr:last-child td { border-bottom: none; }
+    .attendance-table tr:hover td { background: var(--surface-container-lowest); }
+
+    /* Compact Buttons */
+    .mark-btn {
+        width: 32px; height: 32px; border-radius: 8px;
+        border: 1.5px solid var(--outline-variant);
+        background: transparent;
+        color: var(--text-tertiary);
+        display: inline-flex; align-items: center; justify-content: center;
+        transition: all 0.2s; cursor: pointer; font-size: 0.9rem;
+    }
+    .mark-btn:hover { border-color: var(--primary); color: var(--primary); }
     
-    .avatar-wrapper { position: relative; margin: 0 auto 0.75rem; width: 64px; height: 64px; }
-    .avatar-img { width: 100%; height: 100%; border-radius: 20px; object-fit: cover; }
-    .avatar-placeholder { width: 100%; height: 100%; border-radius: 20px; background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; }
+    .mark-btn.btn-p.active { background: #10b981; color: #fff; border-color: #10b981; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3); }
+    .mark-btn.btn-a.active { background: #ef4444; color: #fff; border-color: #ef4444; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3); }
+    .mark-btn.btn-l.active { background: #06b6d4; color: #fff; border-color: #06b6d4; box-shadow: 0 2px 6px rgba(6, 182, 212, 0.3); }
+
+    .student-avatar-mini {
+        width: 32px; height: 32px; border-radius: 8px;
+        background: var(--primary-container);
+        color: var(--primary);
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 0.8rem; flex-shrink: 0;
+    }
     
-    @media (max-width: 576px) {
-        .att-card { padding: 1rem 0.5rem; }
-        .att-btn { width: 32px; height: 32px; font-size: 1rem; }
+    /* Search Bar Sticky */
+    .search-sticky {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: var(--surface);
+        padding: 0.5rem 0;
+        margin-bottom: 0.5rem;
+    }
+    
+    @media (max-width: 768px) {
+        .stats-bar { flex-direction: column; align-items: flex-start; gap: 1rem; }
+        .attendance-table td { padding: 10px 8px; }
+        .room-col { display: none; }
     }
 </style>
 
-<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
-    <div>
-        <h4 class="mb-1 fw-800">Attendance</h4>
-        <p class="text-muted small mb-0">Mark daily meal attendance for students</p>
-    </div>
-    <div class="d-flex gap-2 align-items-center">
-        <div class="input-group input-group-sm" style="width: 160px;">
-            <span class="input-group-text bg-white border-end-0"><i class="bi bi-calendar3"></i></span>
-            <input type="date" id="dateInput" class="form-control border-start-0" value="<?= e($date) ?>" onchange="loadAttendance(this.value, <?= $slotId ?>)">
+<div class="animate-fadeInUp">
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+        <div>
+            <h4 class="mb-1 fw-800 text-dark">Mess Attendance</h4>
+            <p class="text-muted small mb-0">Compact view for managing 250+ students efficiently.</p>
         </div>
-        <a href="<?= url('admin/attendance/report') ?>" class="btn btn-outline-secondary btn-sm px-3" style="border-radius:10px">
-            <i class="bi bi-file-earmark-bar-graph me-1"></i>Report
-        </a>
+        <div class="d-flex gap-2 align-items-center">
+            <input type="date" id="dateInput" class="form-control form-control-sm shadow-xs border-0 bg-white" 
+                   value="<?= e($date) ?>" onchange="loadAttendance(this.value, <?= $slotId ?>)" style="width: 150px; border-radius: 8px;">
+            <a href="<?= url('admin/attendance/report') ?>" class="btn btn-outline-secondary btn-sm px-3 shadow-xs" style="border-radius:8px">
+                <i class="bi bi-file-earmark-bar-graph me-1"></i>Report
+            </a>
+        </div>
     </div>
-</div>
 
-<!-- Slot Tabs -->
-<div class="slot-nav mb-4">
-    <div class="d-flex gap-2 overflow-x-auto pb-2" style="scrollbar-width: none;">
-        <?php foreach ($slots as $slot): ?>
-        <button class="nav-link text-nowrap <?= $slot['slot_id'] == $slotId ? 'active' : '' ?>"
-                onclick="loadAttendance('<?= e($date) ?>', <?= $slot['slot_id'] ?>)">
-            <i class="bi bi-clock me-2"></i><?= e($slot['name']) ?>
-            <span class="ms-2 opacity-75" style="font-size: .75rem;"><?= e($slot['slot_time']??'') ?></span>
-        </button>
-        <?php endforeach; ?>
+    <!-- Slot Tabs -->
+    <div class="slot-nav mb-4">
+        <div class="d-flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+            <?php foreach ($slots as $slot): ?>
+            <button class="nav-link text-nowrap <?= $slot['slot_id'] == $slotId ? 'active' : '' ?>"
+                    onclick="loadAttendance('<?= e($date) ?>', <?= $slot['slot_id'] ?>)">
+                <i class="bi bi-clock me-1"></i><?= e($slot['name']) ?>
+                <span class="ms-1 opacity-75" style="font-size: .7rem;"><?= e($slot['slot_time']??'') ?></span>
+            </button>
+            <?php endforeach; ?>
+        </div>
     </div>
-</div>
 
-<!-- Summary Metrics -->
-<div class="row g-3 mb-4">
-    <div class="col-6 col-lg-3">
-        <div class="metric-card">
-            <div class="metric-icon bg-success-subtle text-success"><i class="bi bi-check-lg"></i></div>
-            <div>
-                <div class="fw-700 fs-5 lh-1" id="presentCount"><?= $summary['present'] ?></div>
-                <div class="text-muted x-small fw-600 mt-1">PRESENT</div>
+    <!-- Stats Bar -->
+    <div class="stats-bar shadow-xs">
+        <div class="d-flex gap-4">
+            <div class="stat-item">
+                <div class="stat-val text-success" id="presentCount"><?= $summary['present'] ?></div>
+                <div class="stat-label">Present</div>
+            </div>
+            <div class="vr opacity-10"></div>
+            <div class="stat-item">
+                <div class="stat-val text-danger" id="absentCount"><?= $summary['absent'] ?></div>
+                <div class="stat-label">Absent</div>
+            </div>
+            <div class="vr opacity-10"></div>
+            <div class="stat-item">
+                <div class="stat-val text-info" id="leaveCount"><?= $summary['leave'] ?></div>
+                <div class="stat-label">Leave</div>
             </div>
         </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="metric-card">
-            <div class="metric-icon bg-danger-subtle text-danger"><i class="bi bi-x-lg"></i></div>
-            <div>
-                <div class="fw-700 fs-5 lh-1" id="absentCount"><?= $summary['absent'] ?></div>
-                <div class="text-muted x-small fw-600 mt-1">ABSENT</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="metric-card">
-            <div class="metric-icon bg-info-subtle text-info"><i class="bi bi-calendar-event"></i></div>
-            <div>
-                <div class="fw-700 fs-5 lh-1" id="leaveCount"><?= $summary['leave'] ?></div>
-                <div class="text-muted x-small fw-600 mt-1">ON LEAVE</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="d-flex flex-column gap-2">
-            <button class="btn btn-primary-g btn-sm w-100 py-2" onclick="markAllPresent()" style="border-radius:12px">
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary-g btn-sm px-3 fw-600 shadow-sm" onclick="markAllPresent()" style="border-radius:8px">
                 <i class="bi bi-check-all me-1"></i>Mark All Present
             </button>
-            <button class="btn btn-outline-secondary btn-sm w-100 py-2" onclick="saveBulk()" style="border-radius:12px">
-                <i class="bi bi-cloud-arrow-up me-1"></i>Sync All
+            <button class="btn btn-dark btn-sm px-3 fw-600 shadow-sm" onclick="saveBulk()" style="border-radius:8px">
+                <i class="bi bi-cloud-arrow-up me-1"></i>Sync Changes
             </button>
         </div>
     </div>
-</div>
 
-<!-- Attendance Grid -->
-<div class="row g-3" id="attendanceGrid">
-<?php foreach ($students as $s): ?>
-<div class="col-6 col-md-4 col-xl-3" data-student-id="<?= $s['student_id'] ?>">
-    <div class="att-card <?= $s['att_status'] ?>" data-status="<?= $s['att_status'] ?>">
-        <div class="avatar-wrapper">
-            <?php if($s['photo_path']): ?>
-            <img src="<?= url($s['photo_path']) ?>" class="avatar-img">
-            <?php else: ?>
-            <div class="avatar-placeholder"><?= strtoupper(substr($s['full_name'],0,1)) ?></div>
-            <?php endif; ?>
-        </div>
-        
-        <div class="fw-700 small text-truncate mb-0"><?= e($s['full_name']) ?></div>
-        <div class="text-muted x-small fw-500"><?= e($s['room_number'] ? 'Room '.$s['room_number'] : 'No Room') ?></div>
-        
-        <div class="mt-3 d-flex justify-content-center gap-2">
-            <button class="att-btn btn-p <?= $s['att_status']==='present'?'active':'' ?>"
-                    onclick="setStatus(this,'present')" title="Present">
-                <i class="bi bi-check-lg"></i>
-            </button>
-            <button class="att-btn btn-a <?= $s['att_status']==='absent'?'active':'' ?>"
-                    onclick="setStatus(this,'absent')" title="Absent">
-                <i class="bi bi-x-lg"></i>
-            </button>
-            <button class="att-btn btn-l <?= $s['att_status']==='leave'?'active':'' ?>"
-                    onclick="setStatus(this,'leave')" title="Leave">
-                <i class="bi bi-calendar-event"></i>
+    <!-- Search & Filter Bar -->
+    <div class="search-sticky">
+        <div class="input-group shadow-xs rounded-3 overflow-hidden">
+            <span class="input-group-text bg-white border-0"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" id="attendanceSearch" class="form-control border-0 bg-white" 
+                   placeholder="Search student by name or room number (e.g. 101)..." onkeyup="filterStudents()">
+            <button class="btn btn-white border-0 text-muted" onclick="clearSearch()" id="clearBtn" style="display:none;">
+                <i class="bi bi-x-circle-fill"></i>
             </button>
         </div>
     </div>
-</div>
-<?php endforeach; ?>
-</div>
 
-<style>
-.x-small { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; }
-</style>
+    <!-- Attendance Table -->
+    <div class="attendance-table shadow-sm">
+        <table class="table table-borderless mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">#</th>
+                    <th>STUDENT NAME</th>
+                    <th class="room-col text-center">ROOM</th>
+                    <th class="text-center" style="width: 180px;">ATTENDANCE STATUS</th>
+                </tr>
+            </thead>
+            <tbody id="attendanceList">
+                <?php $i=1; foreach ($students as $s): ?>
+                <tr class="student-row" data-student-id="<?= $s['student_id'] ?>" data-search="<?= strtolower($s['full_name'] . ' ' . ($s['room_number'] ?? '')) ?>">
+                    <td class="text-muted small fw-600"><?= $i++ ?></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="student-avatar-mini">
+                                <?= strtoupper(mb_substr($s['full_name'], 0, 1)) ?>
+                            </div>
+                            <div class="fw-700 text-dark small"><?= e($s['full_name']) ?></div>
+                        </div>
+                    </td>
+                    <td class="room-col text-center">
+                        <span class="badge bg-surface-variant text-muted fw-600 px-2" style="font-size: 0.75rem;">
+                            <?= e($s['room_number'] ? 'R-'.$s['room_number'] : '—') ?>
+                        </span>
+                    </td>
+                    <td>
+                        <div class="d-flex justify-content-center gap-2" data-status="<?= $s['att_status'] ?>">
+                            <button class="mark-btn btn-p <?= $s['att_status']==='present'?'active':'' ?>"
+                                    onclick="setStatus(this,'present')" title="Mark Present">
+                                <i class="bi bi-check-lg"></i>
+                            </button>
+                            <button class="mark-btn btn-a <?= $s['att_status']==='absent'?'active':'' ?>"
+                                    onclick="setStatus(this,'absent')" title="Mark Absent">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                            <button class="mark-btn btn-l <?= $s['att_status']==='leave'?'active':'' ?>"
+                                    onclick="setStatus(this,'leave')" title="Mark Leave">
+                                <i class="bi bi-calendar-event"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+                <tr id="noResults" style="display:none;">
+                    <td colspan="4" class="text-center py-5 text-muted">
+                        <i class="bi bi-search fs-1 opacity-25 d-block mb-3"></i>
+                        No students match your search.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
 
 <script>
 let currentSlot = <?= $slotId ?>;
 let currentDate = '<?= e($date) ?>';
 
 function setStatus(btn, status) {
-    const card = btn.closest('.att-card');
-    const studentId = btn.closest('[data-student-id]').dataset.studentId;
+    const parent = btn.parentElement;
+    const row = btn.closest('.student-row');
+    const studentId = row.dataset.studentId;
     
     // UI Update
-    card.className = 'att-card ' + status;
-    card.dataset.status = status;
-    
-    card.querySelectorAll('.att-btn').forEach(b => b.classList.remove('active'));
+    parent.dataset.status = status;
+    parent.querySelectorAll('.mark-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 
     // AJAX Save
@@ -204,44 +250,87 @@ function setStatus(btn, status) {
 }
 
 function updateCounts() {
-    const cards = document.querySelectorAll('.att-card');
-    let p=0,a=0,l=0;
-    cards.forEach(c=>{ 
-        if(c.dataset.status==='present') p++; 
-        else if(c.dataset.status==='leave') l++; 
-        else a++; 
+    let p=0, a=0, l=0;
+    document.querySelectorAll('[data-status]').forEach(el => {
+        const s = el.dataset.status;
+        if(s==='present') p++; else if(s==='leave') l++; else a++;
     });
     document.getElementById('presentCount').textContent = p;
     document.getElementById('absentCount').textContent  = a;
     document.getElementById('leaveCount').textContent   = l;
 }
 
-function markAllPresent() {
-    document.querySelectorAll('.att-card').forEach(card => {
-        if(card.dataset.status !== 'present') {
-            card.className = 'att-card present';
-            card.dataset.status = 'present';
-            card.querySelectorAll('.att-btn').forEach(b => {
-                b.classList.remove('active');
-                if(b.classList.contains('btn-p')) b.classList.add('active');
-            });
+function filterStudents() {
+    const q = document.getElementById('attendanceSearch').value.toLowerCase();
+    const rows = document.querySelectorAll('.student-row');
+    const clearBtn = document.getElementById('clearBtn');
+    let found = 0;
+    
+    clearBtn.style.display = q ? 'block' : 'none';
+    
+    rows.forEach(row => {
+        if(row.dataset.search.includes(q)) {
+            row.style.display = '';
+            found++;
+        } else {
+            row.style.display = 'none';
         }
     });
-    updateCounts();
-    saveBulk(); // Auto-sync after bulk action
+    
+    document.getElementById('noResults').style.display = found === 0 ? '' : 'none';
+}
+
+function clearSearch() {
+    document.getElementById('attendanceSearch').value = '';
+    filterStudents();
+}
+
+function markAllPresent() {
+    Swal.fire({
+        title: 'Mark All Present?',
+        text: 'This will mark all currently visible students as Present.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, All Present',
+        confirmButtonColor: '#10b981',
+        background: 'var(--card)',
+        color: 'var(--text)'
+    }).then(r => {
+        if(r.isConfirmed) {
+            document.querySelectorAll('.student-row:not([style*="display: none"])').forEach(row => {
+                const btn = row.querySelector('.btn-p');
+                if(!btn.classList.contains('active')) setStatus(btn, 'present');
+            });
+            showToast('Marked all as present','success');
+        }
+    });
 }
 
 function saveBulk() {
+    const btn = event.target;
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Syncing...';
+
     const records = [];
-    document.querySelectorAll('[data-student-id]').forEach(el => {
-        records.push({student_id: el.dataset.studentId, status: el.querySelector('.att-card').dataset.status});
+    document.querySelectorAll('.student-row').forEach(row => {
+        records.push({
+            student_id: row.dataset.studentId, 
+            status: row.querySelector('[data-status]').dataset.status
+        });
     });
+
     fetch('<?= url('api/admin/attendance/bulk-mark') ?>', {
         method:'POST',
         headers:{'Content-Type':'application/x-www-form-urlencoded','X-CSRF-TOKEN':CSRF_TOKEN},
         body: new URLSearchParams({_token:CSRF_TOKEN,slot_id:currentSlot,date:currentDate,records:JSON.stringify(records)})
     }).then(r=>r.json()).then(d=>{
-        if(d.success) showToast(`Synced ${d.count} attendance records`,'success');
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        if(d.success) showToast(`Successfully synced ${d.count} records`,'success');
+    }).catch(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
     });
 }
 

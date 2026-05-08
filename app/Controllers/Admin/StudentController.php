@@ -616,6 +616,28 @@ class StudentController extends Controller
     }
 
 
+    public function searchSuggestions(): void
+    {
+        $tid    = auth_user()['tenant_id'];
+        $query  = $this->input('q', '');
+        
+        if (strlen($query) < 2) {
+            echo json_encode([]);
+            return;
+        }
+
+        $students = \DB::query(
+            "SELECT student_id, full_name, reg_number, phone 
+             FROM students 
+             WHERE tenant_id = ? 
+             AND (full_name LIKE ? OR reg_number LIKE ? OR phone LIKE ?) 
+             LIMIT 10",
+            [$tid, "%$query%", "%$query%", "%$query%"]
+        );
+
+        $this->json($students);
+    }
+
     public function exportExcel(): void
     {
         $tid = auth_user()['tenant_id'];
