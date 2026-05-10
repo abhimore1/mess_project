@@ -62,6 +62,10 @@
                                        onchange="toggleSlot(<?= $slot['slot_id'] ?>, this.checked)">
                             </div>
                             <div class="vr mx-2" style="height: 20px; opacity: 0.1;"></div>
+                            <button class="btn btn-icon btn-outline-primary border-0 me-1" 
+                                    onclick='editSlot(<?= json_encode($slot) ?>)' title="Edit Slot">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
                             <button class="btn btn-icon btn-outline-danger border-0" 
                                     onclick="deleteSlot(<?= $slot['slot_id'] ?>)" title="Delete Slot">
                                 <i class="bi bi-trash3"></i>
@@ -128,6 +132,45 @@
     </div>
 </div>
 
+<!-- Edit Slot Modal -->
+<div class="modal fade" id="editSlotModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header border-bottom px-4 pt-4">
+                <h5 class="modal-title fw-700">Edit Meal Slot</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="editSlotForm">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="slot_id" id="edit_slot_id">
+                    <div class="mb-3">
+                        <label class="form-label font-medium small text-muted text-uppercase tracking-wider">Slot Name</label>
+                        <input type="text" name="name" id="edit_name" class="form-control form-control-lg border-0 bg-surface-variant" required style="font-size: 0.95rem;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-medium small text-muted text-uppercase tracking-wider">Timing / Range</label>
+                        <input type="text" name="slot_time" id="edit_slot_time" class="form-control form-control-lg border-0 bg-surface-variant" required style="font-size: 0.95rem;">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label font-medium small text-muted text-uppercase tracking-wider">Meal Category</label>
+                        <select name="meal_type" id="edit_meal_type" class="form-select form-select-lg border-0 bg-surface-variant" style="font-size: 0.95rem;">
+                            <option value="breakfast">🍳 Breakfast</option>
+                            <option value="lunch">🍱 Lunch</option>
+                            <option value="snacks">☕ Snacks</option>
+                            <option value="dinner">🍛 Dinner</option>
+                            <option value="other">🍽️ Other</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary-g w-100 py-3 fw-700 shadow-sm">
+                        Save Changes
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
 .slot-icon-wrapper {
     width: 48px;
@@ -164,6 +207,14 @@
 <script>
 function showAddSlot() { new bootstrap.Modal(document.getElementById('addSlotModal')).show(); }
 
+function editSlot(slot) {
+    document.getElementById('edit_slot_id').value = slot.slot_id;
+    document.getElementById('edit_name').value = slot.name;
+    document.getElementById('edit_slot_time').value = slot.slot_time;
+    document.getElementById('edit_meal_type').value = slot.meal_type;
+    new bootstrap.Modal(document.getElementById('editSlotModal')).show();
+}
+
 document.getElementById('addSlotForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const btn = this.querySelector('button[type="submit"]');
@@ -185,6 +236,37 @@ document.getElementById('addSlotForm').addEventListener('submit', function(e) {
             btn.disabled = false;
             btn.innerHTML = originalText;
             showToast('Error adding slot','danger');
+        }
+    }).catch(()=>{
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        showToast('Connection error','danger');
+    });
+});
+
+document.getElementById('editSlotForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const btn = this.querySelector('button[type="submit"]');
+    const originalText = btn.innerHTML;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+    
+    const data = new FormData(this);
+    const slotId = document.getElementById('edit_slot_id').value;
+    
+    fetch(`<?= url('admin/meal-slots/') ?>${slotId}/update`, {
+        method:'POST',
+        headers:{'X-CSRF-TOKEN':CSRF_TOKEN},
+        body: new URLSearchParams(data)
+    }).then(r=>r.json()).then(d=>{
+        if(d.success){ 
+            showToast('Meal slot updated successfully!','success'); 
+            setTimeout(()=>location.reload(),800); 
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            showToast('Error updating slot','danger');
         }
     }).catch(()=>{
         btn.disabled = false;

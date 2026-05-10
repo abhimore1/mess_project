@@ -25,11 +25,12 @@ class AttendanceController extends Controller
         $students = DB::query("SELECT s.student_id, s.full_name, s.room_number, s.photo_path,
             COALESCE(sa.status,'absent') AS att_status, sa.attendance_id
             FROM students s
+            JOIN student_meal_slots sms ON sms.student_id=s.student_id AND sms.slot_id=?
             LEFT JOIN student_attendance sa ON sa.student_id=s.student_id
                 AND sa.slot_id=? AND sa.date=? AND sa.tenant_id=?
             WHERE s.tenant_id=? AND s.status='active'
             ORDER BY s.full_name ASC",
-            [$slotId, $date, $tid, $tid]);
+            [$slotId, $slotId, $date, $tid, $tid]);
 
         $summary = [
             'present' => count(array_filter($students, fn($s) => $s['att_status'] === 'present')),
@@ -37,8 +38,11 @@ class AttendanceController extends Controller
             'leave'   => count(array_filter($students, fn($s) => $s['att_status'] === 'leave')),
         ];
 
+        // Generate QR Token
+        $qrToken = md5($tid . $slotId . $date . env('APP_SECRET', 'MessIndiaSecretKey2026'));
+
         $pageTitle = 'Attendance';
-        $this->view('admin/attendance/index', compact('students','slots','slotId','date','summary','pageTitle'), 'app');
+        $this->view('admin/attendance/index', compact('students','slots','slotId','date','summary','qrToken','pageTitle'), 'app');
     }
 
     public function mark(): void

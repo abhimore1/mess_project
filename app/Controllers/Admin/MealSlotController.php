@@ -58,13 +58,21 @@ class MealSlotController extends Controller
         $this->requirePermission('settings.manage');
         $tid = auth_user()['tenant_id'];
 
-        DB::update('meal_slots',[
-            'name'       => $this->input('name'),
-            'slot_time'  => $this->input('slot_time'),
-            'meal_type'  => $this->input('meal_type','other'),
-            'is_active'  => (int)(bool)$this->input('is_active',1),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ],['slot_id'=>(int)$id,'tenant_id'=>$tid]);
+        $slot = DB::queryOne("SELECT * FROM meal_slots WHERE slot_id=? AND tenant_id=?", [(int)$id, $tid]);
+        if (!$slot) $this->abort(404);
+
+        $name = $this->input('name');
+        $slotTime = $this->input('slot_time');
+        $mealType = $this->input('meal_type');
+        $isActive = $this->input('is_active');
+
+        $updateData = ['updated_at' => date('Y-m-d H:i:s')];
+        if ($name !== null) $updateData['name'] = $name;
+        if ($slotTime !== null) $updateData['slot_time'] = $slotTime;
+        if ($mealType !== null) $updateData['meal_type'] = $mealType;
+        if ($isActive !== null) $updateData['is_active'] = (int)(bool)$isActive;
+
+        DB::update('meal_slots', $updateData, ['slot_id'=>(int)$id,'tenant_id'=>$tid]);
 
         if ($this->isAjax()) { $this->json(['success'=>true]); }
         flash('success','Meal slot updated.');

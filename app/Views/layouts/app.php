@@ -225,22 +225,33 @@ table.dataTable tbody tr:hover {
             <i class="bi bi-speedometer2"></i>
             <span>Home</span>
         </a>
+        <?php if (can('students.view')): ?>
         <a href="<?= url('admin/students') ?>" class="bottom-nav-item <?= str_contains($_SERVER['REQUEST_URI'],'admin/student')?'active':'' ?>">
             <i class="bi bi-people"></i>
             <span>Students</span>
         </a>
+        <?php endif; ?>
+        
+        <?php if (can('payments.create')): ?>
         <a href="<?= url('admin/payments/create') ?>" class="bottom-nav-item" style="color:var(--primary)">
             <i class="bi bi-plus-circle-fill" style="font-size:1.75rem"></i>
             <span>Collect</span>
         </a>
+        <?php endif; ?>
+
+        <?php if (can('attendance.view')): ?>
         <a href="<?= url('admin/attendance') ?>" class="bottom-nav-item <?= str_contains($_SERVER['REQUEST_URI'],'attendance')?'active':'' ?>">
             <i class="bi bi-calendar-check"></i>
             <span>Attendance</span>
         </a>
+        <?php endif; ?>
+
+        <?php if (can('settings.manage')): ?>
         <a href="<?= url('admin/settings') ?>" class="bottom-nav-item <?= str_contains($_SERVER['REQUEST_URI'],'settings')?'active':'' ?>">
             <i class="bi bi-gear"></i>
             <span>Settings</span>
         </a>
+        <?php endif; ?>
     </div>
 </nav>
 
@@ -255,6 +266,16 @@ table.dataTable tbody tr:hover {
 <script>
 const APP_URL = '<?= url() ?>';
 const CSRF_TOKEN = '<?= csrf() ?>';
+
+// ─── Move ALL modals to document.body on load ──────────────────
+// This fixes Bootstrap modal centering when modals are inside CSS-transformed containers.
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.modal').forEach(modal => {
+        if (modal.parentNode !== document.body) {
+            document.body.appendChild(modal);
+        }
+    });
+});
 
 // Mobile sidebar - ensure closed on page load
 document.addEventListener('DOMContentLoaded', () => {

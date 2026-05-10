@@ -109,6 +109,9 @@
             <p class="text-muted small mb-0">Compact view for managing 250+ students efficiently.</p>
         </div>
         <div class="d-flex gap-2 align-items-center">
+            <button class="btn btn-primary btn-sm px-3 shadow-xs fw-600" style="border-radius:8px" onclick="showQrModal()">
+                <i class="bi bi-qr-code-scan me-1"></i>QR Code
+            </button>
             <input type="date" id="dateInput" class="form-control form-control-sm shadow-xs border-0 bg-white" 
                    value="<?= e($date) ?>" onchange="loadAttendance(this.value, <?= $slotId ?>)" style="width: 150px; border-radius: 8px;">
             <a href="<?= url('admin/attendance/report') ?>" class="btn btn-outline-secondary btn-sm px-3 shadow-xs" style="border-radius:8px">
@@ -116,6 +119,7 @@
             </a>
         </div>
     </div>
+
 
     <!-- Slot Tabs -->
     <div class="slot-nav mb-4">
@@ -227,9 +231,56 @@
     </div>
 </div>
 
+<!-- QR Code Modal -->
+<div class="modal fade" id="qrModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-700">Scan to Mark Attendance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center pb-5 pt-4">
+                <div id="qrcode" class="d-inline-block bg-white p-3 rounded-4 shadow-sm border mb-3"></div>
+                <p class="text-muted small mb-0">Students can scan this QR code to self-mark their attendance for the current slot.</p>
+                <div class="mt-3 fw-bold text-dark" id="qrSlotName"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 let currentSlot = <?= $slotId ?>;
 let currentDate = '<?= e($date) ?>';
+const qrToken = '<?= $qrToken ?>';
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Move modal to body to prevent layout confinement issues
+    document.body.appendChild(document.getElementById('qrModal'));
+});
+
+function showQrModal() {
+    const qrContainer = document.getElementById('qrcode');
+    qrContainer.innerHTML = ''; // Clear existing QR code
+    
+    const qrUrl = `<?= url('student/attendance/scan') ?>?slot_id=${currentSlot}&date=${currentDate}&token=${qrToken}`;
+    
+    new QRCode(qrContainer, {
+        text: qrUrl,
+        width: 240,
+        height: 240,
+        colorDark : "#1f2937",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+    });
+    
+    const activeSlot = document.querySelector('.slot-nav .nav-link.active');
+    const slotText = activeSlot ? activeSlot.textContent.trim() : 'Unknown Slot';
+    document.getElementById('qrSlotName').textContent = `${slotText} (${currentDate})`;
+    
+    const qrModal = new bootstrap.Modal(document.getElementById('qrModal'));
+    qrModal.show();
+}
 
 function setStatus(btn, status) {
     const parent = btn.parentElement;

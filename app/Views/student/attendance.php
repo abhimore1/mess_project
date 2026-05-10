@@ -74,11 +74,16 @@
 
     <!-- Self Mark Section -->
     <div class="card border-0 shadow-sm mb-4 overflow-hidden animate-fadeInUp stagger-1" style="border-radius: 20px;">
-        <div class="card-header bg-primary py-3 px-4 d-flex justify-content-between align-items-center">
+        <div class="card-header bg-primary py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
             <h6 class="fw-700 text-white mb-0 d-flex align-items-center">
                 <i class="bi bi-hand-index-thumb me-2"></i>Self Mark Attendance (Today)
             </h6>
-            <span class="badge rounded-pill bg-white text-primary x-small"><?= date('d M Y') ?></span>
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-light btn-sm fw-700 rounded-pill px-3 shadow-sm text-primary" onclick="startScanner()">
+                    <i class="bi bi-qr-code-scan me-1"></i> Scan QR
+                </button>
+                <span class="badge rounded-pill bg-white text-primary x-small"><?= date('d M Y') ?></span>
+            </div>
         </div>
         <div class="card-body p-4">
             <div class="row g-4">
@@ -164,6 +169,22 @@
     </div>
 </div>
 
+<!-- QR Scanner Modal -->
+<div class="modal fade" id="scannerModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-700"><i class="bi bi-qr-code-scan me-2"></i>Scan Attendance QR</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="stopScanner()"></button>
+            </div>
+            <div class="modal-body text-center pb-4 pt-4">
+                <div id="reader" style="width: 100%; border-radius: 12px; overflow: hidden; border: 2px solid var(--border);"></div>
+                <p class="text-muted small mt-3 mb-0">Point your camera at the QR code displayed by the Mess Admin.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
 .bg-success-subtle { background: #e8f5e9 !important; }
 .bg-danger-subtle { background: #ffebee !important; }
@@ -193,7 +214,64 @@
 }
 </style>
 
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Move modal to body to prevent z-index issues
+    document.body.appendChild(document.getElementById('scannerModal'));
+    
+    document.getElementById('scannerModal').addEventListener('hidden.bs.modal', function () {
+        stopScanner();
+    });
+});
+
+let html5QrcodeScanner = null;
+
+function startScanner() {
+    const scannerModal = new bootstrap.Modal(document.getElementById('scannerModal'));
+    scannerModal.show();
+    
+    if (!html5QrcodeScanner) {
+        html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader",
+            { fps: 10, qrbox: {width: 250, height: 250} },
+            /* verbose= */ false);
+    }
+    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+}
+
+function stopScanner() {
+    if (html5QrcodeScanner) {
+        html5QrcodeScanner.clear().catch(error => {
+            console.error("Failed to clear scanner.", error);
+        });
+    }
+}
+
+function onScanSuccess(decodedText, decodedResult) {
+    stopScanner();
+    const modalEl = document.getElementById('scannerModal');
+    const modal = bootstrap.Modal.getInstance(modalEl);
+    if(modal) modal.hide();
+    
+    // Redirect to the scanned URL
+    if (decodedText.includes('attendance/scan')) {
+        Swal.fire({
+            title: 'Processing...',
+            text: 'Verifying your attendance...',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+        window.location.href = decodedText;
+    } else {
+        Swal.fire('Invalid QR Code', 'This is not a valid Mess India attendance QR code.', 'error');
+    }
+}
+
+function onScanFailure(error) {
+    // ignore
+}
+
 function markSelf(slotId, status) {
     Swal.fire({
         title: 'Confirm Attendance?',
@@ -204,7 +282,7 @@ function markSelf(slotId, status) {
         confirmButtonColor: status === 'present' ? '#2e7d32' : '#d32f2f'
     }).then((result) => {
         if (result.isConfirmed) {
-            fetch('<?= url("student/attendance/mark") ?>', {
+            fetch('<?= url("student/attendance/self-mark") ?>', {
                 method:'POST',
                 headers:{'X-CSRF-TOKEN':'<?= csrf() ?>','Content-Type':'application/x-www-form-urlencoded'},
                 body: 'slot_id='+slotId+'&status='+status+'&_token=<?= csrf() ?>'

@@ -38,7 +38,7 @@ $router->group(['prefix' => '/super', 'middleware' => ['SuperAdmin']], function(
 });
 
 // ── Mess Admin ───────────────────────────────────────────────
-$router->group(['prefix' => '/admin', 'middleware' => ['Auth', 'Tenant']], function($r) {
+$router->group(['prefix' => '/admin', 'middleware' => ['Auth', 'Tenant', 'AdminAccess']], function($r) {
     $r->get('/dashboard',                      'Admin\DashboardController@index');
     $r->get('/profile',                        'Admin\ProfileController@index');
 
@@ -51,6 +51,9 @@ $router->group(['prefix' => '/admin', 'middleware' => ['Auth', 'Tenant']], funct
     $r->get('/students/export/pdf',            'Admin\StudentController@exportPdf');
     $r->get('/students/export/excel',          'Admin\StudentController@exportExcel');
     $r->get('/students/suggestions',           'Admin\StudentController@searchSuggestions');
+    
+    // Student Meal Slots
+    $r->get('/students/slots',                 'Admin\StudentSlotController@index');
     
     // Dynamic student routes (must be below static routes)
     $r->get('/students/{id}',                  'Admin\StudentController@show');
@@ -108,6 +111,14 @@ $router->group(['prefix' => '/admin', 'middleware' => ['Auth', 'Tenant']], funct
     $r->post('/years/store',                   'Admin\YearController@store');
     $r->post('/years/{id}/toggle',             'Admin\YearController@toggleStatus');
     $r->post('/years/{id}/delete',             'Admin\YearController@delete');
+
+    // Coordinators
+    $r->get('/coordinators',                   'Admin\CoordinatorController@index');
+    $r->get('/coordinators/create',            'Admin\CoordinatorController@create');
+    $r->post('/coordinators/store',            'Admin\CoordinatorController@store');
+    $r->get('/coordinators/{id}/edit',         'Admin\CoordinatorController@edit');
+    $r->post('/coordinators/{id}/update',      'Admin\CoordinatorController@update');
+    $r->post('/coordinators/{id}/delete',      'Admin\CoordinatorController@delete');
 });
 
 // ── Student Portal ───────────────────────────────────────────
@@ -117,6 +128,7 @@ $router->group(['prefix' => '/student', 'middleware' => ['Auth', 'Tenant']], fun
     $r->get('/payments',                 'Student\PortalController@payments');
     $r->get('/payments/{id}/receipt',    'Student\PortalController@receipt');
     $r->get('/attendance',               'Student\PortalController@attendance');
+    $r->get('/attendance/scan',          'Student\PortalController@scanQr');
     $r->post('/attendance/self-mark',    'Student\PortalController@selfMark');
     $r->get('/food-menu',                'Student\PortalController@foodMenu');
     $r->get('/complaints',               'Student\PortalController@complaints');
@@ -139,6 +151,7 @@ $router->group(['prefix' => '/coordinator', 'middleware' => ['Auth']], function(
 $router->group(['prefix' => '/api'], function($r) {
     $r->get('/tenant/{slug}/info',          'Auth\AuthController@tenantInfo');
     $r->post('/admin/students/ajax-list',   'Admin\StudentController@ajaxList');
+    $r->post('/admin/students/slots/bulk-assign', 'Admin\StudentSlotController@saveBulk');
     $r->post('/admin/attendance/bulk-mark', 'Admin\AttendanceController@bulkMark');
     $r->get('/notifications/unread-count',  'Admin\NotificationController@unreadCount');
 });

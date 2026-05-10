@@ -13,9 +13,7 @@ class AuthController extends Controller
         if (AuthService::check()) {
             $this->redirectByRole(AuthService::role());
         }
-        // Load tenants for the mess-selector dropdown
-        $tenants = \DB::query("SELECT slug, name FROM tenants WHERE status='active' ORDER BY name ASC");
-        $this->view('auth/login', ['tenants' => $tenants, 'csrf' => $this->csrfToken()], 'auth');
+        $this->view('auth/login', ['csrf' => $this->csrfToken()], 'auth');
     }
 
     public function login(): void
@@ -24,7 +22,6 @@ class AuthController extends Controller
 
         $email    = trim($this->input('email', ''));
         $password = $this->input('password', '');
-        $slug     = trim($this->input('mess_slug', '')) ?: null;
 
         $errors = $this->validate([
             'email'    => 'required|email',
@@ -32,17 +29,29 @@ class AuthController extends Controller
         ]);
 
         if ($errors) {
-            $_SESSION['_old']   = ['email' => $email, 'mess_slug' => $slug];
+            $_SESSION['_old']   = ['email' => $email];
             $_SESSION['_flash']['error'] = array_values($errors)[0];
             $this->back();
         }
 
-        $result = AuthService::attempt($email, $password, $slug);
+        $result = AuthService::attempt($email, $password);
 
         if (!$result['success']) {
-            $_SESSION['_old']   = ['email' => $email, 'mess_slug' => $slug];
+            $_SESSION['_old']   = ['email' => $email];
             $_SESSION['_flash']['error'] = $result['message'];
             $this->back();
+        }
+
+        $intended = $_SESSION['intended_url'] ?? null;
+        unset($_SESSION['intended_url']);
+
+        if ($intended) {
+            $base = rtrim(env('APP_URL', ''), '/');
+            // Ensure intended URL is within our app to prevent open redirect
+            if (str_starts_with($intended, parse_url($base, PHP_URL_PATH))) {
+                header("Location: " . $intended);
+                exit;
+            }
         }
 
         $this->redirectByRole($result['role']);
@@ -69,7 +78,7 @@ class AuthController extends Controller
             'super_admin'  => $this->redirect('super/dashboard'),
             'mess_admin'   => $this->redirect('admin/dashboard'),
             'student'      => $this->redirect('student/dashboard'),
-            'coordinator'  => $this->redirect('coordinator/dashboard'),
+            'coordinator'  => $this->redirect('admin/dashboard'),
             default        => $this->redirect('login'),
         };
     }

@@ -35,8 +35,11 @@ $role = auth_user()['role'];
     <a href="<?= url('admin/profile') ?>" class="nav-link <?= str_contains($_SERVER['REQUEST_URI'],'admin/profile')?'active':'' ?>">
         <i class="bi bi-person-badge"></i> Mess Profile
     </a>
-    <a href="<?= url('admin/students') ?>" class="nav-link <?= str_contains($_SERVER['REQUEST_URI'],'admin/student')?'active':'' ?>">
+    <a href="<?= url('admin/students') ?>" class="nav-link <?= str_contains($_SERVER['REQUEST_URI'],'admin/student') && !str_contains($_SERVER['REQUEST_URI'],'slots')?'active':'' ?>">
         <i class="bi bi-people"></i> Students
+    </a>
+    <a href="<?= url('admin/students/slots') ?>" class="nav-link <?= str_contains($_SERVER['REQUEST_URI'],'admin/students/slots')?'active':'' ?> ps-4" style="font-size: 0.9em;">
+        <i class="bi bi-arrow-return-right text-muted me-2"></i> Assign Slots
     </a>
 
     <?php if (module_enabled('membership')): ?>
@@ -91,6 +94,9 @@ $role = auth_user()['role'];
     <a href="<?= url('admin/settings') ?>" class="nav-link <?= str_contains($_SERVER['REQUEST_URI'],'settings')?'active':'' ?>">
         <i class="bi bi-gear"></i> Settings
     </a>
+    <a href="<?= url('admin/coordinators') ?>" class="nav-link <?= str_contains($_SERVER['REQUEST_URI'],'coordinators')?'active':'' ?>">
+        <i class="bi bi-person-gear"></i> Coordinators
+    </a>
 
 <?php elseif ($role === 'student'): ?>
     <div class="nav-section">My Account</div>
@@ -110,9 +116,52 @@ $role = auth_user()['role'];
     <a href="<?= url('student/notifications') ?>" class="nav-link"><i class="bi bi-bell"></i> Notifications</a>
 
 <?php elseif ($role === 'coordinator'): ?>
-    <div class="nav-section">Overview</div>
-    <a href="<?= url('coordinator/dashboard') ?>" class="nav-link"><i class="bi bi-speedometer2"></i> Dashboard</a>
-    <a href="<?= url('coordinator/students') ?>"  class="nav-link"><i class="bi bi-people"></i> Students</a>
-    <a href="<?= url('coordinator/reports') ?>"   class="nav-link"><i class="bi bi-bar-chart-line"></i> Reports</a>
-    <a href="<?= url('coordinator/complaints') ?>" class="nav-link"><i class="bi bi-chat-square-text"></i> Complaints</a>
+    <div class="nav-section">Dashboard</div>
+    <a href="<?= url('admin/dashboard') ?>" class="nav-link <?= str_contains($_SERVER['REQUEST_URI'],'admin/dashboard')?'active':'' ?>">
+        <i class="bi bi-speedometer2"></i> Dashboard
+    </a>
+
+    <div class="nav-section">Management</div>
+    <?php if (can('students.view')): ?>
+    <a href="<?= url('admin/students') ?>" class="nav-link <?= str_contains($_SERVER['REQUEST_URI'],'admin/student')?'active':'' ?>">
+        <i class="bi bi-people"></i> Students
+    </a>
+    <?php endif; ?>
+
+    <?php if (can('membership.view') && module_enabled('membership')): ?>
+    <a href="<?= url('admin/memberships') ?>" class="nav-link <?= str_contains($_SERVER['REQUEST_URI'],'membership')?'active':'' ?>">
+        <i class="bi bi-card-checklist"></i> Memberships
+    </a>
+    <?php endif; ?>
+
+    <?php if (can('payments.view')): ?>
+    <a href="<?= url('admin/payments') ?>" class="nav-link <?= str_contains($_SERVER['REQUEST_URI'],'admin/payment')?'active':'' ?>">
+        <i class="bi bi-credit-card"></i> Payments
+    </a>
+    <?php endif; ?>
+
+    <?php if (can('attendance.view')): ?>
+    <a href="<?= url('admin/attendance') ?>" class="nav-link <?= str_contains($_SERVER['REQUEST_URI'],'attendance')?'active':'' ?>">
+        <i class="bi bi-calendar-check"></i> Attendance
+    </a>
+    <?php endif; ?>
+
+    <?php if (can('food_menu.view') && module_enabled('food_menu')): ?>
+    <a href="<?= url('admin/food-menu') ?>" class="nav-link <?= str_contains($_SERVER['REQUEST_URI'],'food-menu')?'active':'' ?>">
+        <i class="bi bi-journal-text"></i> Food Menu
+    </a>
+    <?php endif; ?>
+
+    <?php if (can('complaints.view') && module_enabled('complaints')): ?>
+    <a href="<?= url('admin/complaints') ?>" class="nav-link <?= str_contains($_SERVER['REQUEST_URI'],'complaint')?'active':'' ?>">
+        <i class="bi bi-chat-square-text"></i> Complaints
+    </a>
+    <?php endif; ?>
+
+    <?php if (can('reports.view')): ?>
+    <div class="nav-section">Reports</div>
+    <a href="<?= url('admin/reports') ?>" class="nav-link <?= str_contains($_SERVER['REQUEST_URI'],'report')?'active':'' ?>">
+        <i class="bi bi-file-earmark-bar-graph"></i> Reports
+    </a>
+    <?php endif; ?>
 <?php endif; ?>

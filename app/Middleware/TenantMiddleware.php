@@ -42,5 +42,19 @@ class TenantMiddleware
             array_column($rows, 'slug'),
             array_column($core, 'slug')
         ));
+
+        // Dynamically refresh permissions for coordinators
+        if ($role === 'coordinator') {
+            $permissions = ['dashboard.view'];
+            $userId = $_SESSION['user_id'] ?? 0;
+            $coord = \DB::queryOne("SELECT custom_permissions FROM coordinators WHERE user_id = ?", [$userId]);
+            if ($coord && !empty($coord['custom_permissions'])) {
+                $custom = json_decode($coord['custom_permissions'], true);
+                if (is_array($custom)) {
+                    $permissions = array_unique(array_merge($permissions, $custom));
+                }
+            }
+            $_SESSION['permissions'] = $permissions;
+        }
     }
 }

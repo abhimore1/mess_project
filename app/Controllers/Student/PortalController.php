@@ -36,11 +36,12 @@ class PortalController extends Controller
             WHERE sa.student_id=? AND sa.tenant_id=? AND sa.date >= DATE_SUB(CURDATE(),INTERVAL 7 DAY)
             ORDER BY sa.date DESC, ms.sort_order", [$student['student_id'],$tid]);
 
-        // Today's food menu
+        // Today's food menu (only for slots the student is assigned to)
         $todayMenu = DB::query("SELECT ms.name AS slot_name, ms.slot_time, fm.items
             FROM food_menu fm JOIN meal_slots ms ON ms.slot_id=fm.slot_id
+            JOIN student_meal_slots sms ON sms.slot_id=ms.slot_id AND sms.student_id=?
             WHERE fm.tenant_id=? AND (fm.menu_date=CURDATE() OR fm.day_of_week=DAYOFWEEK(CURDATE())-1)
-            AND fm.is_active=1 ORDER BY ms.sort_order",[$tid]);
+            AND fm.is_active=1 ORDER BY ms.sort_order",[$student['student_id'], $tid]);
 
         $pageTitle = 'My Dashboard';
         $this->view('student/dashboard', compact('student','activeMembership','recentPayments','attendanceSummary','todayMenu','pageTitle'), 'app');
@@ -88,7 +89,10 @@ class PortalController extends Controller
             ORDER BY sa.date ASC, ms.sort_order",
             [$student['student_id'],$tid,$year,$mon]);
 
-        $slots   = DB::query("SELECT * FROM meal_slots WHERE tenant_id=? AND is_active=1 ORDER BY sort_order",[$tid]);
+        $slots   = DB::query("SELECT m.* FROM meal_slots m 
+            JOIN student_meal_slots sms ON sms.slot_id=m.slot_id 
+            WHERE m.tenant_id=? AND sms.student_id=? AND m.is_active=1 ORDER BY m.sort_order",
+            [$tid, $student['student_id']]);
         $pageTitle = 'My Attendance';
         $this->view('student/attendance', compact('student','records','slots','month','pageTitle'), 'app');
     }
@@ -101,9 +105,12 @@ class PortalController extends Controller
         $slotId  = (int)$this->input('slot_id');
         $status  = $this->input('status','present');
 
-        // Verify slot is for today & tenant
-        $slot = DB::queryOne("SELECT slot_id FROM meal_slots WHERE slot_id=? AND tenant_id=? AND is_active=1",[$slotId,$tid]);
-        if (!$slot) { $this->json(['success'=>false,'error'=>'Invalid slot.']); }
+        // Verify slot is for today & tenant & assigned to student
+        $slot = DB::queryOne("SELECT m.slot_id FROM meal_slots m
+            JOIN student_meal_slots sms ON sms.slot_id=m.slot_id
+            WHERE m.slot_id=? AND m.tenant_id=? AND sms.student_id=? AND m.is_active=1",
+            [$slotId, $tid, $student['student_id']]);
+        if (!$slot) { $this->json(['success'=>false,'error'=>'Invalid or unassigned slot.']); }
 
         DB::execute(
             "INSERT INTO student_attendance (tenant_id,student_id,slot_id,date,status,self_marked,created_at,updated_at)
@@ -114,15 +121,64 @@ class PortalController extends Controller
         $this->json(['success'=>true]);
     }
 
+    public function scanQr(): void
+    {
+        $student = $this->getStudent();
+        $tid     = auth_user()['tenant_id'];
+
+        $slotId = (int)$this->input('slot_id');
+        $date   = $this->input('date');
+        $token  = $this->input('token');
+
+        // Verify token
+        $expectedToken = md5($tid . $slotId . $date . env('APP_SECRET', 'MessIndiaSecretKey2026'));
+        if ($token !== $expectedToken) {
+            $this->abort(403, 'Invalid or expired QR code.');
+        }
+
+        // Verify slot
+        $slot = DB::queryOne("SELECT m.slot_id, m.name FROM meal_slots m
+            JOIN student_meal_slots sms ON sms.slot_id=m.slot_id
+            WHERE m.slot_id=? AND m.tenant_id=? AND sms.student_id=? AND m.is_active=1",
+            [$slotId, $tid, $student['student_id']]);
+        if (!$slot) {
+            $this->abort(404, 'Meal slot not found or not assigned to you.');
+        }
+
+        // Mark attendance
+        DB::execute(
+            "INSERT INTO student_attendance (tenant_id,student_id,slot_id,date,status,self_marked,created_at,updated_at)
+             VALUES (?,?,?,?,'present',1,NOW(),NOW())
+             ON DUPLICATE KEY UPDATE status='present',self_marked=1,updated_at=NOW()",
+            [$tid, $student['student_id'], $slotId, $date]
+        );
+
+        flash('success', "Attendance marked successfully for {$slot['name']} on {$date}.");
+        $this->redirect('student/attendance');
+    }
+
     public function foodMenu(): void
     {
-        $tid  = auth_user()['tenant_id'];
-        $menus = DB::query("SELECT ms.name AS slot_name, ms.slot_time, ms.meal_type, fm.items, fm.menu_date, fm.day_of_week
-            FROM food_menu fm JOIN meal_slots ms ON ms.slot_id=fm.slot_id
+        $tid     = auth_user()['tenant_id'];
+        $student = $this->getStudent();
+
+        // All active slots
+        $allSlots = DB::query("SELECT * FROM meal_slots WHERE tenant_id=? AND is_active=1 ORDER BY sort_order", [$tid]);
+
+        // Student's assigned slot IDs
+        $assignedRows = DB::query("SELECT slot_id FROM student_meal_slots WHERE student_id=? AND tenant_id=?",
+            [$student['student_id'], $tid]);
+        $assignedSlotIds = array_column($assignedRows, 'slot_id');
+
+        // All food menu entries (including all slots, not just assigned)
+        $menus = DB::query("SELECT ms.slot_id, ms.name AS slot_name, ms.slot_time, ms.meal_type, fm.items, fm.day_of_week
+            FROM food_menu fm
+            JOIN meal_slots ms ON ms.slot_id=fm.slot_id
             WHERE fm.tenant_id=? AND fm.is_active=1
-            ORDER BY fm.day_of_week, ms.sort_order",[$tid]);
+            ORDER BY fm.day_of_week, ms.sort_order", [$tid]);
+
         $pageTitle = 'Food Menu';
-        $this->view('student/food_menu', compact('menus','pageTitle'), 'app');
+        $this->view('student/food_menu', compact('menus', 'allSlots', 'assignedSlotIds', 'pageTitle'), 'app');
     }
 
     public function complaints(): void

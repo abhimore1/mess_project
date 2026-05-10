@@ -3,32 +3,32 @@ namespace App\Services;
 
 class AuthService
 {
-    public static function attempt(string $email, string $password, ?string $tenantSlug = null): array
+    public static function attempt(string $email, string $password): array
     {
-        // Find user
-        if ($tenantSlug) {
-            $tenant = \DB::queryOne("SELECT tenant_id, status, logo, primary_color FROM tenants WHERE slug = ?", [$tenantSlug]);
-            if (!$tenant || $tenant['status'] !== 'active') {
-                return ['success' => false, 'message' => 'Mess not found or inactive.'];
-            }
-            $user = \DB::queryOne(
-                "SELECT u.*, r.slug AS role_slug FROM users u
-                 JOIN roles r ON r.role_id = u.role_id
-                 WHERE u.email = ? AND u.tenant_id = ? LIMIT 1",
-                [$email, $tenant['tenant_id']]
-            );
-        } else {
-            // Super admin login (no tenant)
-            $user = \DB::queryOne(
-                "SELECT u.*, r.slug AS role_slug FROM users u
-                 JOIN roles r ON r.role_id = u.role_id
-                 WHERE u.email = ? AND u.tenant_id IS NULL LIMIT 1",
-                [$email]
-            );
-        }
+        // Find user by email
+        $user = \DB::queryOne(
+            "SELECT u.*, r.slug AS role_slug FROM users u
+             JOIN roles r ON r.role_id = u.role_id
+             WHERE u.email = ? LIMIT 1",
+            [$email]
+        );
 
         if (!$user) {
             return ['success' => false, 'message' => 'Invalid email or password.'];
+        }
+
+        // This login portal is not for super admins
+        if ($user['role_slug'] === 'super_admin') {
+            return ['success' => false, 'message' => 'Super Admins must use the dedicated portal.'];
+        }
+
+        // Verify tenant status
+        $tenant = null;
+        if ($user['tenant_id']) {
+            $tenant = \DB::queryOne("SELECT tenant_id, status, logo, primary_color FROM tenants WHERE tenant_id = ?", [$user['tenant_id']]);
+            if (!$tenant || $tenant['status'] !== 'active') {
+                return ['success' => false, 'message' => 'Mess not found or inactive.'];
+            }
         }
 
         // Check lockout
@@ -49,8 +49,21 @@ class AuthService
         }
 
         // Load permissions
-        $permissions = self::loadPermissions($user['role_id']);
-        $modules     = $tenantSlug ? self::loadModules($user['tenant_id'] ?? 0) : ['*'];
+        if ($user['role_slug'] === 'coordinator') {
+            // Coordinators start with only dashboard access; other permissions are assigned by the Mess Owner
+            $permissions = ['dashboard.view'];
+            $coord = \DB::queryOne("SELECT custom_permissions FROM coordinators WHERE user_id = ?", [$user['user_id']]);
+            if ($coord && !empty($coord['custom_permissions'])) {
+                $custom = json_decode($coord['custom_permissions'], true);
+                if (is_array($custom)) {
+                    $permissions = array_unique(array_merge($permissions, $custom));
+                }
+            }
+        } else {
+            $permissions = self::loadPermissions($user['role_id']);
+        }
+        
+        $modules = $user['tenant_id'] ? self::loadModules($user['tenant_id']) : ['*'];
 
         // Set session
         session_regenerate_id(true);
