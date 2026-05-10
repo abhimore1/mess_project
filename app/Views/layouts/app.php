@@ -88,7 +88,7 @@ table.dataTable tbody tr:hover {
 <style>
 :root {
     <?php 
-    $primary = $_SESSION['primary_color'] ?? '#6750A4';
+    $primary = $_SESSION['primary_color'] ?? '#E65100';
     // Basic luminance check to decide if on-primary should be black or white
     $r = hexdec(substr($primary, 1, 2));
     $g = hexdec(substr($primary, 3, 2));
@@ -135,7 +135,7 @@ table.dataTable tbody tr:hover {
                 <img src="<?= $logo ?>" class="w-100 h-100 object-fit-contain">
             </div>
         <?php else: ?>
-            <div class="brand-icon"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+            <div class="brand-icon"><i class="bi bi-restaurant"></i></div>
         <?php endif; ?>
         <div>
             <div class="brand-name"><?= e(mess_name()) ?></div>

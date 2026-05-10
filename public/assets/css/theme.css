@@ -10,23 +10,23 @@
    CSS Variables - Material Color System
    ============================================ */
 :root {
-    /* Primary Colors */
-    --primary: #6750A4;
-    --primary-container: #EADDFF;
+    /* Primary Colors - Indian Orange/Saffron */
+    --primary: #E65100;
+    --primary-container: #FFF3E0;
     --on-primary: #FFFFFF;
-    --on-primary-container: #21005D;
+    --on-primary-container: #4E1D00;
     
-    /* Secondary Colors */
-    --secondary: #625B71;
-    --secondary-container: #E8DEF8;
+    /* Secondary Colors - Indian Green */
+    --secondary: #138808;
+    --secondary-container: #E8F5E9;
     --on-secondary: #FFFFFF;
-    --on-secondary-container: #1D192B;
+    --on-secondary-container: #002D00;
     
-    /* Tertiary Colors */
-    --tertiary: #7D5260;
-    --tertiary-container: #FFD8E4;
-    --on-tertiary: #FFFFFF;
-    --on-tertiary-container: #31111D;
+    /* Tertiary Colors - Deep Gold */
+    --tertiary: #FFB300;
+    --tertiary-container: #FFF8E1;
+    --on-tertiary: #000000;
+    --on-tertiary-container: #452700;
     
     /* Surface Colors - Pure White Theme */
     --surface: #FFFFFF;
